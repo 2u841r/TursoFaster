@@ -1,3 +1,5 @@
+Opennextjs/cloudflare
+
 ## TursoFaster
 
 you can you my Turso **read-only** token, which is on .env.example
@@ -5,11 +7,9 @@ you can you my Turso **read-only** token, which is on .env.example
 if you need your own data, run `pnpm run import:convex` .
 (it will take 6000+ seconds)
 
-
 note: minimumCacheTTL: 3600 in next.config.mjs
 
-
-___
+---
 
 ## NextFaster
 

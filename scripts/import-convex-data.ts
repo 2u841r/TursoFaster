@@ -81,9 +81,12 @@ async function readJSONLStream<T = unknown>(filePath: string): Promise<T[]> {
 
 async function importCollections(db: ReturnType<typeof drizzle>) {
   console.log("📦 Importing collections...");
-  const filePath = join(process.cwd(), "data/convex/collections/documents.jsonl");
-  const data = await readJSONL(filePath) as ConvexCollection[];
-  
+  const filePath = join(
+    process.cwd(),
+    "data/convex/collections/documents.jsonl",
+  );
+  const data = (await readJSONL(filePath)) as ConvexCollection[];
+
   console.log(`   Found ${data.length} collections`);
 
   // Insert collections
@@ -96,26 +99,30 @@ async function importCollections(db: ReturnType<typeof drizzle>) {
   for (let i = 0; i < collectionsToInsert.length; i += BATCH_SIZE) {
     const batch = collectionsToInsert.slice(i, i + BATCH_SIZE);
     await db.insert(schema.collections).values(batch);
-    console.log(`   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(collectionsToInsert.length / BATCH_SIZE)}`);
+    console.log(
+      `   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(collectionsToInsert.length / BATCH_SIZE)}`,
+    );
   }
 
   // Build mapping: external_id -> new id
   const allCollections = await db.select().from(schema.collections);
   const collectionMap = new Map<number, number>();
   const slugToIdMap = new Map<string, number>();
-  
+
   // Build slug -> id map for fast lookup
   for (const dbItem of allCollections) {
     slugToIdMap.set(dbItem.slug, dbItem.id);
   }
-  
+
   // Match by slug to build external_id -> new id mapping
   for (const convexItem of data) {
     const dbId = slugToIdMap.get(convexItem.slug);
     if (dbId) {
       collectionMap.set(convexItem.external_id, dbId);
     } else {
-      console.warn(`   ⚠️  Warning: Collection with slug ${convexItem.slug} not found after insert`);
+      console.warn(
+        `   ⚠️  Warning: Collection with slug ${convexItem.slug} not found after insert`,
+      );
     }
   }
 
@@ -125,19 +132,24 @@ async function importCollections(db: ReturnType<typeof drizzle>) {
 
 async function importCategories(
   db: ReturnType<typeof drizzle>,
-  collectionMap: Map<number, number>
+  collectionMap: Map<number, number>,
 ) {
   console.log("📁 Importing categories...");
-  const filePath = join(process.cwd(), "data/convex/categories/documents.jsonl");
-  const data = await readJSONL(filePath) as ConvexCategory[];
-  
+  const filePath = join(
+    process.cwd(),
+    "data/convex/categories/documents.jsonl",
+  );
+  const data = (await readJSONL(filePath)) as ConvexCategory[];
+
   console.log(`   Found ${data.length} categories`);
 
   const categoriesToInsert = data
     .map((item) => {
       const collectionId = collectionMap.get(item.collection_id);
       if (!collectionId) {
-        console.warn(`   ⚠️  Warning: Collection ID ${item.collection_id} not found for category ${item.slug}`);
+        console.warn(
+          `   ⚠️  Warning: Collection ID ${item.collection_id} not found for category ${item.slug}`,
+        );
         return null;
       }
       return {
@@ -153,19 +165,22 @@ async function importCategories(
   for (let i = 0; i < categoriesToInsert.length; i += BATCH_SIZE) {
     const batch = categoriesToInsert.slice(i, i + BATCH_SIZE);
     await db.insert(schema.categories).values(batch);
-    console.log(`   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(categoriesToInsert.length / BATCH_SIZE)}`);
+    console.log(
+      `   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(categoriesToInsert.length / BATCH_SIZE)}`,
+    );
   }
 
   console.log(`   ✓ Imported ${categoriesToInsert.length} categories`);
 }
 
-async function importSubcollections(
-  db: ReturnType<typeof drizzle>
-) {
+async function importSubcollections(db: ReturnType<typeof drizzle>) {
   console.log("📂 Importing subcollections...");
-  const filePath = join(process.cwd(), "data/convex/subcollections/documents.jsonl");
-  const data = await readJSONL(filePath) as ConvexSubcollection[];
-  
+  const filePath = join(
+    process.cwd(),
+    "data/convex/subcollections/documents.jsonl",
+  );
+  const data = (await readJSONL(filePath)) as ConvexSubcollection[];
+
   console.log(`   Found ${data.length} subcollections`);
 
   const subcollectionsToInsert = data.map((item) => ({
@@ -177,20 +192,22 @@ async function importSubcollections(
   for (let i = 0; i < subcollectionsToInsert.length; i += BATCH_SIZE) {
     const batch = subcollectionsToInsert.slice(i, i + BATCH_SIZE);
     await db.insert(schema.subcollections).values(batch);
-    console.log(`   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(subcollectionsToInsert.length / BATCH_SIZE)}`);
+    console.log(
+      `   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(subcollectionsToInsert.length / BATCH_SIZE)}`,
+    );
   }
 
   // Build mapping: external_id -> new id
   const allSubcollections = await db.select().from(schema.subcollections);
   const subcollectionMap = new Map<number, number>();
   const keyToIdMap = new Map<string, number>();
-  
+
   // Build composite key -> id map for fast lookup
   for (const dbItem of allSubcollections) {
     const key = `${dbItem.name}::${dbItem.category_slug}`;
     keyToIdMap.set(key, dbItem.id);
   }
-  
+
   // Match by composite key to build external_id -> new id mapping
   for (const convexItem of data) {
     const key = `${convexItem.name}::${convexItem.category_slug}`;
@@ -198,7 +215,9 @@ async function importSubcollections(
     if (dbId) {
       subcollectionMap.set(convexItem.external_id, dbId);
     } else {
-      console.warn(`   ⚠️  Warning: Subcollection with key ${key} not found after insert`);
+      console.warn(
+        `   ⚠️  Warning: Subcollection with key ${key} not found after insert`,
+      );
     }
   }
 
@@ -208,19 +227,24 @@ async function importSubcollections(
 
 async function importSubcategories(
   db: ReturnType<typeof drizzle>,
-  subcollectionMap: Map<number, number>
+  subcollectionMap: Map<number, number>,
 ) {
   console.log("📋 Importing subcategories...");
-  const filePath = join(process.cwd(), "data/convex/subcategories/documents.jsonl");
-  const data = await readJSONL(filePath) as ConvexSubcategory[];
-  
+  const filePath = join(
+    process.cwd(),
+    "data/convex/subcategories/documents.jsonl",
+  );
+  const data = (await readJSONL(filePath)) as ConvexSubcategory[];
+
   console.log(`   Found ${data.length} subcategories`);
 
   const subcategoriesToInsert = data
     .map((item) => {
       const subcollectionId = subcollectionMap.get(item.subcollection_id);
       if (!subcollectionId) {
-        console.warn(`   ⚠️  Warning: Subcollection ID ${item.subcollection_id} not found for subcategory ${item.slug}`);
+        console.warn(
+          `   ⚠️  Warning: Subcollection ID ${item.subcollection_id} not found for subcategory ${item.slug}`,
+        );
         return null;
       }
       return {
@@ -236,7 +260,9 @@ async function importSubcategories(
   for (let i = 0; i < subcategoriesToInsert.length; i += BATCH_SIZE) {
     const batch = subcategoriesToInsert.slice(i, i + BATCH_SIZE);
     await db.insert(schema.subcategories).values(batch);
-    console.log(`   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(subcategoriesToInsert.length / BATCH_SIZE)}`);
+    console.log(
+      `   Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(subcategoriesToInsert.length / BATCH_SIZE)}`,
+    );
   }
 
   console.log(`   ✓ Imported ${subcategoriesToInsert.length} subcategories`);
@@ -245,11 +271,13 @@ async function importSubcategories(
 async function importProducts(db: ReturnType<typeof drizzle>) {
   console.log("🛍️  Importing products...");
   const filePath = join(process.cwd(), "data/convex/products/documents.jsonl");
-  
+
   // Use streaming for large product file
-  console.log("   Reading products file (this may take a moment for large files)...");
-  const data = await readJSONLStream(filePath) as ConvexProduct[];
-  
+  console.log(
+    "   Reading products file (this may take a moment for large files)...",
+  );
+  const data = (await readJSONLStream(filePath)) as ConvexProduct[];
+
   console.log(`   Found ${data.length} products`);
 
   const productsToInsert = data.map((item) => ({
@@ -267,8 +295,13 @@ async function importProducts(db: ReturnType<typeof drizzle>) {
     const batch = productsToInsert.slice(i, i + PRODUCT_BATCH_SIZE);
     await db.insert(schema.products).values(batch);
     const currentBatch = Math.floor(i / PRODUCT_BATCH_SIZE) + 1;
-    const progress = ((i + batch.length) / productsToInsert.length * 100).toFixed(1);
-    console.log(`   Inserted batch ${currentBatch}/${totalBatches} (${i + batch.length}/${productsToInsert.length} products, ${progress}%)`);
+    const progress = (
+      ((i + batch.length) / productsToInsert.length) *
+      100
+    ).toFixed(1);
+    console.log(
+      `   Inserted batch ${currentBatch}/${totalBatches} (${i + batch.length}/${productsToInsert.length} products, ${progress}%)`,
+    );
   }
 
   console.log(`   ✓ Imported ${productsToInsert.length} products`);
@@ -276,7 +309,9 @@ async function importProducts(db: ReturnType<typeof drizzle>) {
 
 async function main() {
   if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
-    throw new Error("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variables");
+    throw new Error(
+      "Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variables",
+    );
   }
 
   const client = createClient({
@@ -319,4 +354,3 @@ async function main() {
 }
 
 main();
-

@@ -22,7 +22,7 @@ export function WelcomeToast() {
             This demo is to highlight the speed a full-stack Next.js site can
             achieve.{" "}
             <a
-              href="https://github.com/ethanniser/TursoFaster"
+              href="https://github.com/2u841r/TursoFaster"
               className="font-semibold text-accent1 hover:underline"
               target="_blank"
             >

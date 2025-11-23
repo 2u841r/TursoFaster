@@ -112,7 +112,7 @@ export default async function RootLayout({
           <div className="text-center sm:text-right">
             By using this website, you agree to check out the{" "}
             <Link
-              href="https://github.com/ethanniser/TursoFaster"
+              href="https://github.com/2u841r/TursoFaster"
               className="font-bold text-accent1 hover:underline"
               target="_blank"
             >

@@ -1,17 +1,17 @@
 ## TursoFaster
 
-run `pnpm run import:convex` .
+you can you my Turso **read-only** token, which is on .env.example
+
+if you need your own data, run `pnpm run import:convex` .
+(it will take 6000+ seconds)
 
 
+note: minimumCacheTTL: 3600 in next.config.mjs
 
 
+___
 
-
-
-
-
-
-## TursoFaster
+## NextFaster
 
 A highly performant e-commerce template using Next.js and AI generated content by [@ethanniser](https://x.com/ethanniser), [@RhysSullivan](https://x.com/RhysSullivan) and [@armans-code](https://x.com/ksw_arman)
 

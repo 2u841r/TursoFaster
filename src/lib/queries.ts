@@ -173,7 +173,7 @@ export const getSearchResults = unstable_cache(
     // SQLite-compatible search using LIKE with case-insensitive matching
     const trimmedTerm = searchTerm.trim();
     const searchPattern = `%${trimmedTerm}%`;
-    
+
     // For multiple words, create AND conditions
     const searchTerms = trimmedTerm
       .split(" ")

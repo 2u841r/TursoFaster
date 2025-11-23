@@ -6,7 +6,9 @@ import "../drizzle/envConfig";
 
 async function main() {
   if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
-    throw new Error("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variables");
+    throw new Error(
+      "Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variables",
+    );
   }
 
   const client = createClient({
@@ -23,7 +25,9 @@ async function main() {
   console.log("📦 Sample Products:");
   products.forEach((p, i) => {
     console.log(`  ${i + 1}. ${p.name}`);
-    console.log(`     image_url: ${p.image_url ? "✅ " + p.image_url.substring(0, 60) + "..." : "❌ NULL"}`);
+    console.log(
+      `     image_url: ${p.image_url ? "✅ " + p.image_url.substring(0, 60) + "..." : "❌ NULL"}`,
+    );
   });
 
   // Check categories
@@ -31,7 +35,9 @@ async function main() {
   console.log("\n📁 Sample Categories:");
   categories.forEach((c, i) => {
     console.log(`  ${i + 1}. ${c.name}`);
-    console.log(`     image_url: ${c.image_url ? "✅ " + c.image_url.substring(0, 60) + "..." : "❌ NULL"}`);
+    console.log(
+      `     image_url: ${c.image_url ? "✅ " + c.image_url.substring(0, 60) + "..." : "❌ NULL"}`,
+    );
   });
 
   // Check subcategories
@@ -39,7 +45,9 @@ async function main() {
   console.log("\n📋 Sample Subcategories:");
   subcategories.forEach((s, i) => {
     console.log(`  ${i + 1}. ${s.name}`);
-    console.log(`     image_url: ${s.image_url ? "✅ " + s.image_url.substring(0, 60) + "..." : "❌ NULL"}`);
+    console.log(
+      `     image_url: ${s.image_url ? "✅ " + s.image_url.substring(0, 60) + "..." : "❌ NULL"}`,
+    );
   });
 
   // Count products with images
@@ -51,10 +59,11 @@ async function main() {
 
   const totalProducts = await db.select().from(schema.products);
   console.log(`📊 Total products: ${totalProducts.length}`);
-  console.log(`📊 Products without images: ${totalProducts.length - productsWithImages.length}`);
+  console.log(
+    `📊 Products without images: ${totalProducts.length - productsWithImages.length}`,
+  );
 
   client.close();
 }
 
 main().catch(console.error);
-

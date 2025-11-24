@@ -1,4 +1,4 @@
-Opennextjs/cloudflare 2
+Opennextjs/cloudflare 23
 
 ## TursoFaster
 

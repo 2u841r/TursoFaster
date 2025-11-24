@@ -53,7 +53,7 @@ export const getProductsForSubcategory = unstable_cache(
     }),
   ["subcategory-products"],
   {
-    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 2, // no cache in dev, two hours in prod
+    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 24, // no cache in dev, two hours in prod
   },
 );
 
@@ -67,7 +67,7 @@ export const getCollections = unstable_cache(
     }),
   ["collections"],
   {
-    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 2, // no cache in dev, two hours in prod
+    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 24, // no cache in dev, two hours in prod
   },
 );
 
@@ -78,7 +78,7 @@ export const getProductDetails = unstable_cache(
     }),
   ["product"],
   {
-    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 2, // no cache in dev, two hours in prod
+    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 24, // no cache in dev, two hours in prod
   },
 );
 
@@ -89,7 +89,7 @@ export const getSubcategory = unstable_cache(
     }),
   ["subcategory"],
   {
-    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 2, // no cache in dev, two hours in prod
+    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 24, // no cache in dev, two hours in prod
   },
 );
 
@@ -107,7 +107,7 @@ export const getCategory = unstable_cache(
     }),
   ["category"],
   {
-    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 2, // no cache in dev, two hours in prod
+    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 24, // no cache in dev, two hours in prod
   },
 );
 
@@ -122,7 +122,7 @@ export const getCollectionDetails = unstable_cache(
     }),
   ["collection"],
   {
-    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 2, // no cache in dev, two hours in prod
+    revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 24, // no cache in dev, two hours in prod
   },
 );
 
@@ -130,7 +130,7 @@ export const getProductCount = unstable_cache(
   () => db.select({ count: count() }).from(products),
   ["total-product-count"],
   {
-    revalidate: 60 * 60 * 2, // two hours,
+    revalidate: 60 * 60 * 24, // two hours,
   },
 );
 
@@ -152,7 +152,7 @@ export const getCategoryProductCount = unstable_cache(
       .where(eq(categories.slug, categorySlug)),
   ["category-product-count"],
   {
-    revalidate: 60 * 60 * 2, // two hours,
+    revalidate: 60 * 60 * 24, // two hours,
   },
 );
 
@@ -164,36 +164,54 @@ export const getSubcategoryProductCount = unstable_cache(
       .where(eq(products.subcategory_slug, subcategorySlug)),
   ["subcategory-product-count"],
   {
-    revalidate: 60 * 60 * 2, // two hours,
+    revalidate: 60 * 60 * 24, // two hours,
   },
 );
 
 export const getSearchResults = unstable_cache(
   async (searchTerm: string) => {
-    // SQLite-compatible search using LIKE with case-insensitive matching
+    // Optimized SQLite search using COLLATE NOCASE for case-insensitive matching
+    // This allows index usage unlike LOWER()
     const trimmedTerm = searchTerm.trim();
-    const searchPattern = `%${trimmedTerm}%`;
-
+    
     // For multiple words, create AND conditions
     const searchTerms = trimmedTerm
       .split(" ")
       .filter((term) => term.trim() !== "")
       .map((term) => term.trim());
 
+    if (searchTerms.length === 0) {
+      return [];
+    }
+
     let whereCondition;
     if (searchTerms.length === 1) {
-      // Single term: use LIKE for pattern matching
-      whereCondition = sql`LOWER(${products.name}) LIKE LOWER(${searchPattern})`;
+      // Single term: use prefix matching when possible (can use index)
+      // Fall back to contains matching for short terms
+      const term = searchTerms[0];
+      if (term.length >= 3) {
+        // Prefix match can use index: "term%"
+        whereCondition = sql`${products.name} COLLATE NOCASE LIKE ${term + "%"}`;
+      } else {
+        // Short terms: use contains but limit results early
+        whereCondition = sql`${products.name} COLLATE NOCASE LIKE ${"%" + term + "%"}`;
+      }
     } else {
       // Multiple terms: all must match (AND condition)
-      // Build the condition by chaining AND clauses
-      let condition = sql`LOWER(${products.name}) LIKE LOWER(${"%" + searchTerms[0] + "%"})`;
+      // Use prefix matching for first term when possible
+      const firstTerm = searchTerms[0];
+      const firstPattern = firstTerm.length >= 3 ? firstTerm + "%" : "%" + firstTerm + "%";
+      let condition = sql`${products.name} COLLATE NOCASE LIKE ${firstPattern}`;
+      
       for (let i = 1; i < searchTerms.length; i++) {
-        condition = sql`${condition} AND LOWER(${products.name}) LIKE LOWER(${"%" + searchTerms[i] + "%"})`;
+        const term = searchTerms[i];
+        const pattern = term.length >= 3 ? term + "%" : "%" + term + "%";
+        condition = sql`${condition} AND ${products.name} COLLATE NOCASE LIKE ${pattern}`;
       }
       whereCondition = condition;
     }
 
+    // Apply limit early to reduce rows processed
     const results = await db
       .select()
       .from(products)
@@ -215,5 +233,5 @@ export const getSearchResults = unstable_cache(
     return results;
   },
   ["search-results"],
-  { revalidate: 60 * 60 * 2 }, // two hours
+  { revalidate: process.env.NODE_ENV === "development" ? false : 60 * 60 * 2 }, // no cache in dev, two hours in prod
 );

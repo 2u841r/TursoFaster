@@ -16,7 +16,6 @@
     "check:images": "tsx scripts/check-images.ts"
   },
   "dependencies": {
-    "@netlify/plugin-nextjs": "5.14.7",
     "@ai-sdk/openai": "^0.0.68",
     "@effect/platform": "^0.68.6",
     "@effect/platform-node": "^0.63.6",
